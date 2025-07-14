@@ -24,7 +24,13 @@ cp -rf supabase/docker/* supabase-aurora
 cp supabase/docker/.env.example supabase-aurora/.env
 ```
 
-### Switch to your project directory
+### Copy Aurora specific setup scripts
+
+```
+cp -rfp supabase/aws supabase-aurora
+```
+
+### Switch to the new project directory
 
 ```
 cd supabase-aurora
@@ -38,7 +44,7 @@ docker compose pull
 
 ## Prepare Aurora
 
-### Create an Aurora instance
+### Create Aurora DB cluster and DB instance
 
 [..]
 
@@ -48,6 +54,12 @@ Make sure `POSTGRES_HOST` and `POSTGRES_PASSWORD` are configured in the `.env` f
 
 ```
 (pushd aws/aurora && sh get_db_scripts.sh && sh migrate_aurora.sh)
+```
+
+### Update docker-compose.yml to use remote database
+
+```
+patch -b < aws/aurora/docker-compose.yml.diff
 ```
 
 ## Start all Supabase services
