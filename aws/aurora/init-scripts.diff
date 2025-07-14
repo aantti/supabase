@@ -1,0 +1,135 @@
+diff -ur init-scripts.orig/00-schema.sql init-scripts/00-schema.sql
+--- init-scripts.orig/00-schema.sql	2025-03-25 03:11:19
++++ init-scripts/00-schema.sql	2025-06-30 14:23:31
+@@ -2,7 +2,9 @@
+ 
+ REVOKE ALL PRIVILEGES ON SCHEMA public FROM pgbouncer;
+ 
+-CREATE SCHEMA pgbouncer AUTHORIZATION pgbouncer;
++-- CREATE SCHEMA pgbouncer AUTHORIZATION pgbouncer;
++CREATE SCHEMA pgbouncer;
++ALTER SCHEMA pgbouncer OWNER TO pgbouncer;
+ 
+ CREATE OR REPLACE FUNCTION pgbouncer.get_auth(p_usename TEXT)
+ RETURNS TABLE(username TEXT, password TEXT) AS
+diff -ur init-scripts.orig/00000000000000-initial-schema.sql init-scripts/00000000000000-initial-schema.sql
+--- init-scripts.orig/00000000000000-initial-schema.sql	2025-03-25 03:11:19
++++ init-scripts/00000000000000-initial-schema.sql	2025-07-01 15:08:52
+@@ -5,10 +5,18 @@
+ create publication supabase_realtime;
+ 
+ -- Supabase super admin
+-alter user  supabase_admin with superuser createdb createrole replication bypassrls;
++-- alter user  supabase_admin with superuser createdb createrole replication bypassrls;
++alter user supabase_admin with createdb createrole bypassrls;
++grant rds_replication to supabase_admin;
++grant select on all tables in schema public to supabase_admin;
++alter default privileges in schema public grant select on tables to supabase_admin;
+ 
+ -- Supabase replication user
+-create user supabase_replication_admin with login replication;
++-- create user supabase_replication_admin with login replication;
++create user supabase_replication_admin with login;
++grant rds_replication to supabase_replication_admin;
++grant select on all tables in schema public to supabase_replication_admin;
++alter default privileges in schema public grant select on tables to supabase_replication_admin;
+ 
+ -- Supabase read-only user
+ create role supabase_read_only_user with login bypassrls;
+@@ -18,7 +26,7 @@
+ create schema if not exists extensions;
+ create extension if not exists "uuid-ossp"      with schema extensions;
+ create extension if not exists pgcrypto         with schema extensions;
+-create extension if not exists pgjwt            with schema extensions;
++-- create extension if not exists pgjwt            with schema extensions;
+ 
+ -- Set up auth roles for the developer
+ create role anon                nologin noinherit;
+@@ -43,12 +51,13 @@
+ alter user supabase_admin SET search_path TO public, extensions; -- don't include the "auth" schema
+ 
+ -- These are required so that the users receive grants whenever "supabase_admin" creates tables/function
+-alter default privileges for user supabase_admin in schema public grant all
+-    on sequences to postgres, anon, authenticated, service_role;
+-alter default privileges for user supabase_admin in schema public grant all
+-    on tables to postgres, anon, authenticated, service_role;
+-alter default privileges for user supabase_admin in schema public grant all
+-    on functions to postgres, anon, authenticated, service_role;
++-- FIX: This doesn't work on Aurora Postgres. Moved to ../migrations/00-alter-supabase_admin.sql
++-- alter default privileges for user supabase_admin in schema public grant all
++--    on sequences to postgres, anon, authenticated, service_role;
++-- alter default privileges for user supabase_admin in schema public grant all
++--    on tables to postgres, anon, authenticated, service_role;
++-- alter default privileges for user supabase_admin in schema public grant all
++--    on functions to postgres, anon, authenticated, service_role;
+ 
+ -- Set short statement/query timeouts for API roles
+ alter role anon set statement_timeout = '3s';
+diff -ur init-scripts.orig/00000000000001-auth-schema.sql init-scripts/00000000000001-auth-schema.sql
+--- init-scripts.orig/00000000000001-auth-schema.sql	2025-03-25 03:11:19
++++ init-scripts/00000000000001-auth-schema.sql	2025-07-01 15:08:44
+@@ -1,6 +1,8 @@
+ -- migrate:up
+ 
+-CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_admin;
++-- CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_admin;
++CREATE SCHEMA IF NOT EXISTS auth;
++ALTER SCHEMA auth OWNER TO supabase_admin;
+ 
+ -- auth.users definition
+ 
+diff -ur init-scripts.orig/00000000000002-storage-schema.sql init-scripts/00000000000002-storage-schema.sql
+--- init-scripts.orig/00000000000002-storage-schema.sql	2025-03-25 03:11:19
++++ init-scripts/00000000000002-storage-schema.sql	2025-06-30 17:21:26
+@@ -1,6 +1,8 @@
+ -- migrate:up
+ 
+-CREATE SCHEMA IF NOT EXISTS storage AUTHORIZATION supabase_admin;
++-- CREATE SCHEMA IF NOT EXISTS storage AUTHORIZATION supabase_admin;
++CREATE SCHEMA IF NOT EXISTS storage;
++ALTER SCHEMA storage OWNER TO supabase_admin;
+ 
+ grant usage on schema storage to postgres, anon, authenticated, service_role;
+ alter default privileges in schema storage grant all on tables to postgres, anon, authenticated, service_role;
+diff -ur init-scripts.orig/00000000000003-post-setup.sql init-scripts/00000000000003-post-setup.sql
+--- init-scripts.orig/00000000000003-post-setup.sql	2025-03-25 03:11:19
++++ init-scripts/00000000000003-post-setup.sql	2025-07-01 14:34:34
+@@ -101,7 +101,9 @@
+ $$;
+ 
+ -- Supabase dashboard user
+-CREATE ROLE dashboard_user NOSUPERUSER CREATEDB CREATEROLE REPLICATION;
++-- CREATE ROLE dashboard_user NOSUPERUSER CREATEDB CREATEROLE REPLICATION;
++CREATE ROLE dashboard_user NOSUPERUSER CREATEDB CREATEROLE;
++GRANT rds_replication TO dashboard_user;
+ GRANT ALL ON DATABASE postgres TO dashboard_user;
+ GRANT ALL ON SCHEMA auth TO dashboard_user;
+ GRANT ALL ON SCHEMA extensions TO dashboard_user;
+diff -ur init-scripts.orig/98-webhooks.sql init-scripts/98-webhooks.sql
+--- init-scripts.orig/98-webhooks.sql	2025-07-11 14:55:41
++++ init-scripts/98-webhooks.sql	2025-07-01 14:52:53
+@@ -1,8 +1,11 @@
+ BEGIN;
+   -- Create pg_net extension
+-  CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
++  -- CREATE EXTENSION IF NOT EXISTS pg_net SCHEMA extensions;
+   -- Create supabase_functions schema
+-  CREATE SCHEMA supabase_functions AUTHORIZATION supabase_admin;
++  -- CREATE SCHEMA supabase_functions AUTHORIZATION supabase_admin;
++  CREATE SCHEMA supabase_functions;
++  ALTER SCHEMA supabase_functions OWNER TO supabase_admin;
++
+   GRANT USAGE ON SCHEMA supabase_functions TO postgres, anon, authenticated, service_role;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+   ALTER DEFAULT PRIVILEGES IN SCHEMA supabase_functions GRANT ALL ON FUNCTIONS TO postgres, anon, authenticated, service_role;
+diff -ur init-scripts.orig/99-jwt.sql init-scripts/99-jwt.sql
+--- init-scripts.orig/99-jwt.sql	2025-07-11 14:55:41
++++ init-scripts/99-jwt.sql	2025-07-01 15:08:24
+@@ -1,5 +1,5 @@
+ \set jwt_secret `echo "$JWT_SECRET"`
+ \set jwt_exp `echo "$JWT_EXP"`
+ 
+-ALTER DATABASE postgres SET "app.settings.jwt_secret" TO :'jwt_secret';
+-ALTER DATABASE postgres SET "app.settings.jwt_exp" TO :'jwt_exp';
++-- ALTER DATABASE postgres SET "app.settings.jwt_secret" TO :'jwt_secret';
++-- ALTER DATABASE postgres SET "app.settings.jwt_exp" TO :'jwt_exp';

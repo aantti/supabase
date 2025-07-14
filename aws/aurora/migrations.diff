@@ -1,0 +1,57 @@
+diff -ur migrations.orig/10000000000000_demote-postgres.sql migrations/10000000000000_demote-postgres.sql
+--- migrations.orig/10000000000000_demote-postgres.sql	2025-03-25 03:11:19
++++ migrations/10000000000000_demote-postgres.sql	2025-07-01 16:04:06
+@@ -1,6 +1,8 @@
+ -- migrate:up
+ 
+ -- demote postgres user
++ALTER ROLE postgres CREATEDB CREATEROLE LOGIN BYPASSRLS;
++GRANT rds_replication TO postgres;
+ GRANT ALL ON DATABASE postgres TO postgres;
+ GRANT ALL ON SCHEMA auth TO postgres;
+ GRANT ALL ON SCHEMA extensions TO postgres;
+@@ -14,6 +16,6 @@
+ GRANT ALL ON ALL ROUTINES IN SCHEMA auth TO postgres;
+ GRANT ALL ON ALL ROUTINES IN SCHEMA storage TO postgres;
+ GRANT ALL ON ALL ROUTINES IN SCHEMA extensions TO postgres;
+-ALTER ROLE postgres NOSUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS;
++-- ALTER ROLE postgres NOSUPERUSER CREATEDB CREATEROLE LOGIN REPLICATION BYPASSRLS;
+ 
+ -- migrate:down
+diff -ur migrations.orig/20211115181400_update-auth-permissions.sql migrations/20211115181400_update-auth-permissions.sql
+--- migrations.orig/20211115181400_update-auth-permissions.sql	2025-03-25 03:11:19
++++ migrations/20211115181400_update-auth-permissions.sql	2025-07-01 16:10:34
+@@ -15,8 +15,8 @@
+ GRANT ALL ON ALL TABLES IN SCHEMA auth TO postgres, dashboard_user;
+ GRANT ALL ON ALL SEQUENCES IN SCHEMA auth TO postgres, dashboard_user;
+ GRANT ALL ON ALL ROUTINES IN SCHEMA auth TO postgres, dashboard_user;
+-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON TABLES TO postgres, dashboard_user;
+-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON SEQUENCES TO postgres, dashboard_user;
+-ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON ROUTINES TO postgres, dashboard_user;
++-- ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON TABLES TO postgres, dashboard_user;
++-- ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON SEQUENCES TO postgres, dashboard_user;
++-- ALTER DEFAULT PRIVILEGES FOR ROLE supabase_auth_admin IN SCHEMA auth GRANT ALL ON ROUTINES TO postgres, dashboard_user;
+ 
+ -- migrate:down
+diff -ur migrations.orig/20220118070449_enable-safeupdate-postgrest.sql migrations/20220118070449_enable-safeupdate-postgrest.sql
+--- migrations.orig/20220118070449_enable-safeupdate-postgrest.sql	2025-03-25 03:11:19
++++ migrations/20220118070449_enable-safeupdate-postgrest.sql	2025-07-01 16:29:44
+@@ -1,4 +1,4 @@
+ -- migrate:up
+-ALTER ROLE authenticator SET session_preload_libraries = 'safeupdate';
++-- ALTER ROLE authenticator SET session_preload_libraries = 'safeupdate';
+ 
+ -- migrate:down
+diff -ur migrations.orig/20240124080435_alter_lo_export_lo_import_owner.sql migrations/20240124080435_alter_lo_export_lo_import_owner.sql
+--- migrations.orig/20240124080435_alter_lo_export_lo_import_owner.sql	2025-03-25 03:11:19
++++ migrations/20240124080435_alter_lo_export_lo_import_owner.sql	2025-07-01 17:39:10
+@@ -1,6 +1,6 @@
+ -- migrate:up
+-alter function pg_catalog.lo_export owner to supabase_admin;
+-alter function pg_catalog.lo_import(text) owner to supabase_admin;
+-alter function pg_catalog.lo_import(text, oid) owner to supabase_admin;
++-- alter function pg_catalog.lo_export owner to supabase_admin;
++-- alter function pg_catalog.lo_import(text) owner to supabase_admin;
++-- alter function pg_catalog.lo_import(text, oid) owner to supabase_admin;
+ 
+ -- migrate:down
