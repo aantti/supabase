@@ -12,16 +12,16 @@ docker cp supabase-db-tmp:/docker-entrypoint-initdb.d ./initdb
 docker rm supabase-db-tmp
 
 # 4. Copy additional scripts from [..]/supabase/docker/volumes/db
-cp -p ../../docker/volumes/db/webhooks.sql \
+cp -p ../../volumes/db/webhooks.sql \
       ./initdb/init-scripts/98-webhooks.sql
-cp -p ../../docker/volumes/db/jwt.sql ./initdb/init-scripts/99-jwt.sql
-cp -p ../../docker/volumes/db/roles.sql ./initdb/init-scripts/99-roles.sql
+cp -p ../../volumes/db/jwt.sql ./initdb/init-scripts/99-jwt.sql
+cp -p ../../volumes/db/roles.sql ./initdb/init-scripts/99-roles.sql
 
-cp -p ../../docker/volumes/db/_supabase.sql \
+cp -p ../../volumes/db/_supabase.sql \
       ./initdb/migrations/97-_supabase.sql
-cp -p ../../docker/volumes/db/logs.sql ./initdb/migrations/99-logs.sql
-cp -p ../../docker/volumes/db/pooler.sql ./initdb/migrations/99-pooler.sql
-cp -p ../../docker/volumes/db/realtime.sql ./initdb/migrations/99-realtime.sql
+cp -p ../../volumes/db/logs.sql ./initdb/migrations/99-logs.sql
+cp -p ../../volumes/db/pooler.sql ./initdb/migrations/99-pooler.sql
+cp -p ../../volumes/db/realtime.sql ./initdb/migrations/99-realtime.sql
 
 cp -p ./00-alter-supabase_admin.sql \
       ./initdb/migrations/00-alter-supabase_admin.sql
