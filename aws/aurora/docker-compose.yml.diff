@@ -1,0 +1,265 @@
+--- ./docker-compose.yml.orig	2025-07-11 14:55:41
++++ ./docker-compose.yml	2025-07-14 17:46:50
+@@ -95,9 +95,9 @@
+       interval: 5s
+       retries: 3
+     depends_on:
+-      db:
++      #db:
+         # Disable this if you are using an external Postgres database
+-        condition: service_healthy
++        #condition: service_healthy
+       analytics:
+         condition: service_healthy
+     environment:
+@@ -165,9 +165,9 @@
+     image: postgrest/postgrest:v12.2.12
+     restart: unless-stopped
+     depends_on:
+-      db:
++      #db:
+         # Disable this if you are using an external Postgres database
+-        condition: service_healthy
++        #condition: service_healthy
+       analytics:
+         condition: service_healthy
+     environment:
+@@ -189,9 +189,9 @@
+     image: supabase/realtime:v2.34.47
+     restart: unless-stopped
+     depends_on:
+-      db:
++      #db:
+         # Disable this if you are using an external Postgres database
+-        condition: service_healthy
++        #condition: service_healthy
+       analytics:
+         condition: service_healthy
+     healthcheck:
+@@ -249,13 +249,15 @@
+       interval: 5s
+       retries: 3
+     depends_on:
+-      db:
++      #db:
+         # Disable this if you are using an external Postgres database
+-        condition: service_healthy
++        #condition: service_healthy
+       rest:
+         condition: service_started
+       imgproxy:
+         condition: service_started
++      minio:
++        condition: service_started
+     environment:
+       ANON_KEY: ${ANON_KEY}
+       SERVICE_KEY: ${SERVICE_ROLE_KEY}
+@@ -263,8 +265,13 @@
+       PGRST_JWT_SECRET: ${JWT_SECRET}
+       DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+       FILE_SIZE_LIMIT: 52428800
+-      STORAGE_BACKEND: file
+-      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
++      STORAGE_BACKEND: s3
++      STORAGE_S3_BUCKET: supabase
++      STORAGE_S3_ENDPOINT: http://minio:9000
++      STORAGE_S3_REGION: us-east-1
++      STORAGE_S3_FORCE_PATH_STYLE: "true"
++      AWS_ACCESS_KEY_ID: minioadmin
++      AWS_SECRET_ACCESS_KEY: minioadmin
+       TENANT_ID: stub
+       # TODO: https://github.com/supabase/storage-api/issues/55
+       REGION: stub
+@@ -299,9 +306,9 @@
+     image: supabase/postgres-meta:v0.89.3
+     restart: unless-stopped
+     depends_on:
+-      db:
++      #db:
+         # Disable this if you are using an external Postgres database
+-        condition: service_healthy
++        #condition: service_healthy
+       analytics:
+         condition: service_healthy
+     environment:
+@@ -358,10 +365,10 @@
+       timeout: 5s
+       interval: 5s
+       retries: 10
+-    depends_on:
+-      db:
++    #depends_on:
++      #db:
+         # Disable this if you are using an external Postgres database
+-        condition: service_healthy
++        #condition: service_healthy
+     environment:
+       LOGFLARE_NODE_HOST: 127.0.0.1
+       DB_USERNAME: supabase_admin
+@@ -385,62 +392,61 @@
+       # GOOGLE_PROJECT_NUMBER: ${GOOGLE_PROJECT_NUMBER}
+ 
+   # Comment out everything below this point if you are using an external Postgres database
+-  db:
+-    container_name: supabase-db
+-    image: supabase/postgres:15.8.1.060
+-    restart: unless-stopped
+-    volumes:
+-      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+-      # Must be superuser to create event trigger
+-      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+-      # Must be superuser to alter reserved role
+-      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+-      # Initialize the database settings with JWT_SECRET and JWT_EXP
+-      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+-      # PGDATA directory is persisted between restarts
+-      - ./volumes/db/data:/var/lib/postgresql/data:Z
+-      # Changes required for internal supabase data such as _analytics
+-      - ./volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
+-      # Changes required for Analytics support
+-      - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
+-      # Changes required for Pooler support
+-      - ./volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
+-      # Use named volume to persist pgsodium decryption key between restarts
+-      - db-config:/etc/postgresql-custom
+-    healthcheck:
+-      test:
+-        [
+-        "CMD",
+-        "pg_isready",
+-        "-U",
+-        "postgres",
+-        "-h",
+-        "localhost"
+-        ]
+-      interval: 5s
+-      timeout: 5s
+-      retries: 10
+-    depends_on:
+-      vector:
+-        condition: service_healthy
+-    environment:
+-      POSTGRES_HOST: /var/run/postgresql
+-      PGPORT: ${POSTGRES_PORT}
+-      POSTGRES_PORT: ${POSTGRES_PORT}
+-      PGPASSWORD: ${POSTGRES_PASSWORD}
+-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+-      PGDATABASE: ${POSTGRES_DB}
+-      POSTGRES_DB: ${POSTGRES_DB}
+-      JWT_SECRET: ${JWT_SECRET}
+-      JWT_EXP: ${JWT_EXPIRY}
+-    command:
+-      [
+-        "postgres",
+-        "-c",
+-        "config_file=/etc/postgresql/postgresql.conf",
+-        "-c",
+-        "log_min_messages=fatal" # prevents Realtime polling queries from appearing in logs
+-      ]
++  #db:
++  #  container_name: supabase-db
++  #  image: supabase/postgres:15.8.1.060
++  #  restart: unless-stopped
++  #  volumes:
++  #    - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
++  #    # Must be superuser to create event trigger
++  #    - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
++  #    # Must be superuser to alter reserved role
++  #    - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
++  #    # Initialize the database settings with JWT_SECRET and JWT_EXP
++  #    - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
++  #    # PGDATA directory is persisted between restarts
++  #    - ./volumes/db/data:/var/lib/postgresql/data:Z
++  #    # Changes required for internal supabase data such as _analytics
++  #    - ./volumes/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
++  #    # Changes required for Analytics support
++  #    - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
++  #    # Changes required for Pooler support
++  #    - ./volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
++  #    # Use named volume to persist pgsodium decryption key between restarts
++  #    - db-config:/etc/postgresql-custom
++  #  healthcheck:
++  #    test:
++  #      [
++  #        "CMD",
++  #        "pg_isready",
++  #        "-U",
++  #        "postgres",
++  #        "-h",
++  #        "localhost"
++  #        ]
++  #    interval: 5s
++  #    timeout: 5s
++  #    retries: 10
++  #  depends_on:
++  #    vector:
++  #      condition: service_healthy
++  #  environment:
++  #    POSTGRES_HOST: /var/run/postgresql
++  #    PGPORT: ${POSTGRES_PORT}
++  #    PGPASSWORD: ${POSTGRES_PASSWORD}
++  #    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
++  #    PGDATABASE: ${POSTGRES_DB}
++  #    POSTGRES_DB: ${POSTGRES_DB}
++  #    JWT_SECRET: ${JWT_SECRET}
++  #    JWT_EXP: ${JWT_EXPIRY}
++  #  command:
++  #    [
++  #      "postgres",
++  #      "-c",
++  #      "config_file=/etc/postgresql/postgresql.conf",
++  #      "-c",
++  #      "log_min_messages=fatal" # prevents Realtime polling queries from appearing in logs
++  #    ]
+ 
+   vector:
+     container_name: supabase-vector
+@@ -497,8 +503,8 @@
+       timeout: 5s
+       retries: 5
+     depends_on:
+-      db:
+-        condition: service_healthy
++      #db:
++        #condition: service_healthy
+       analytics:
+         condition: service_healthy
+     environment:
+@@ -526,5 +532,37 @@
+         "/app/bin/migrate && /app/bin/supavisor eval \"$$(cat /etc/pooler/pooler.exs)\" && /app/bin/server"
+       ]
+ 
++  minio:
++    image: minio/minio
++    command: server /data --console-address ":9001"
++    environment:
++      MINIO_ROOT_USER: minioadmin
++      MINIO_ROOT_PASSWORD: minioadmin
++    volumes:
++      - ./volumes/minio:/data
++    ports:
++      - "9000:9000"
++      - "9001:9001"
++    #healthcheck:
++      #test: ["CMD", "curl", "-f", "http://minio:9000/minio/health/live"]
++      #interval: 2s
++      #timeout: 10s
++      #retries: 5
++
++  create-buckets:
++    image: minio/mc
++    depends_on:
++      - minio
++    entrypoint: >
++      /bin/sh -c "
++        # Wait for MinIO to be ready by retrying mc alias set
++        until mc alias set localminio http://minio:9000 minioadmin minioadmin; do
++          echo 'Waiting for MinIO...';
++          sleep 2;
++        done;
++        # Create the bucket (ignore error if exists)
++        mc mb localminio/supabase || true;
++      "
++
+ volumes:
+   db-config:
