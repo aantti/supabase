@@ -94,21 +94,22 @@
 
 **Change default parameter groups to custom groups**
 
-- Go to Aurora and RDS > Databases
-- Select database-2
-- Click Modify
-- Find "Additional configuration" at the bottom of the page
-- Change "DB cluster parameter group" to database-2-cluster-aurora-postgres16
-- Click Continue at the bottom and select "Apply immediately"
-- Click "Modify cluster"
-
-- Go back to Aurora and RDS > Databases
-- Select database-2-instance-1
-- Click Modify
-- Find "Additional configuration" at the bottom of the page
-- Change "DB parameter group" to database-2-aurora-postgres16
-- Click Continue at the bottom and select "Apply immediately"
-- Click "Modify DB instance"
+- Change parameter group for the database cluster
+  - Go to Aurora and RDS > Databases
+  - Select database-2
+  - Click Modify
+  - Find "Additional configuration" at the bottom of the page
+  - Change "DB cluster parameter group" to database-2-cluster-aurora-postgres16
+  - Click Continue at the bottom and select "Apply immediately"
+  - Click "Modify cluster"
+- Change parameter group for the database instance
+  - Go back to Aurora and RDS > Databases
+  - Select database-2-instance-1
+  - Click Modify
+  - Find "Additional configuration" at the bottom of the page
+  - Change "DB parameter group" to database-2-aurora-postgres16
+  - Click Continue at the bottom and select "Apply immediately"
+  - Click "Modify DB instance"
 
 **Reboot database**
 
