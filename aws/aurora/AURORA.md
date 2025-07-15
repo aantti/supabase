@@ -1,8 +1,8 @@
-## Create an Aurora PostreSQL instance
+# Create an Aurora PostreSQL instance
 
-### Using AWS Console
+## Using AWS Console
 
-1. Create database cluster and database instance
+### Create database cluster and database instance
 
 - Go to Aurora and RDS in the AWS console
 - Click "Create database"
@@ -40,13 +40,13 @@
   - Performance Insights: Enable Performance insights
 - Additional configuration
   - Database options
-    - Initial database name: postgres (!!!)
+    - Initial database name: **postgres** (!!!)
 - Click "Create database" at the bottom
 - Don't pick any "add-ons"
 - Check if you see "Successfully created database database-2"
 - Click "View connection details" and write down the database endpoint hostname
 
-2. Configure inbound rules
+### Configure inbound rules
 
 - In Aurora and RDS > Databases click on database-2-instance-1
 - Check "Connectivity & security" tab
@@ -60,9 +60,9 @@
   - Source: 0.0.0.0/0 (Anywhere/IPv4)
   - Description: Postgres
 
-3. Configure parameter groups
+### Configure parameter groups
 
-3.1. Create custom cluster parameter group
+**Create custom cluster parameter group**
 
 - In Aurora and RDS > Parameter groups
 - Click "Create parameter group"
@@ -77,8 +77,7 @@
   - Set the `rds.logical_replication` value to `1`
   - Click "Save Changes"
 
-
-3.2. Create custom database parameter group
+**Create custom database parameter group**
 
 - In Aurora and RDS > Parameter groups
 - Click "Create parameter group"
@@ -93,7 +92,7 @@
   - Set `shared_preload_libraries` to `pg_cron,pg_stat_statements`
   - Click "Save Changes"
 
-3.3. Change default parameter groups to custom groups
+**Change default parameter groups to custom groups**
 
 - Go to Aurora and RDS > Databases
 - Select database-2
@@ -111,12 +110,12 @@
 - Click Continue at the bottom and select "Apply immediately"
 - Click "Modify DB instance"
 
-3.4. Reboot database
+**Reboot database**
 
 - Go back to Aurora and RDS > Databases
 - Wait until the status of the cluster and database instance changes from "Modifying" to "Available"
 - Select database-2-instance-1, click Actions and reboot the database
 
-### Using AWS CLI
+## Using AWS CLI
 
 [..]
