@@ -140,4 +140,22 @@ Detailed notes on how to create an Aurora PostgreSQL database are below.
 
 ## Using AWS CLI
 
-[..]
+You can use `aurora-awscli.sh` to create Aurora PostgreSQL using the `aws` CLI. Make sure to edit the variables in the script first:
+
+```
+sh aws-aurora.sh create
+```
+
+To stop the cluster temporarily, use:
+
+```
+sh aws-aurora.sh stop
+```
+
+(Use `start` to start it again.)
+
+To delete the cluster, use:
+
+```
+sh aws-aurora.sh delete
+```

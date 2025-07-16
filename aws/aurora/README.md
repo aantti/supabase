@@ -1,5 +1,16 @@
 ## Create Aurora DB cluster and DB instance
 
+Below is the minimal list of tasks required to set up Aurora PostgreSQL for Supabase:
+
+- Create custom cluster parameter group for Aurora PostgreSQL with `rds.logical_replication` enabled
+- Create custom database parameter group for Aurora PostgreSQL to edit `shared_preload_libraries`
+- Create Aurora PostgreSQL cluster with proper configuration
+- Create Aurora PostgreSQL database instance with Serverless v2 configuration
+- Apply custom parameter groups to cluster and instance
+- Reboot database instance to apply parameter changes
+- Configure security group to allow inbound traffic on port 5432
+- Verify database connectivity and save endpoint hostname and security credentials
+
 See detailed notes in [AURORA.md](AURORA.md)
 
 ## Set Up Supabase Containers
