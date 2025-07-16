@@ -2,21 +2,24 @@
 
 Detailed notes on how to create an Aurora PostgreSQL database are below.
 
-**Important**
+**Important notes:**
 
 - Set "Master username" to **supabase_admin**
 - Configure secure "Master password"
 - Initial database should be specified as **postgres**
-- This example describes a publicly accessible PostgreSQL database (with regard to the traffic rules)!
+- This example describes a PostgreSQL database publicly accessible from the Internet!
 
-In this example:
+**In this example:**
 
 - Database name is **database-2**
-- It's a development environment configuration and assumes not many other resources on AWS exist yet
+- It's a development environment configuration and assumes minimal existing AWS resources
+- Cluster and database instance have minimally required configuration
+- This is probably the least expensive configuration too
+
+**Additional tasks to remember:**
+
 - Check your VPN and subnets configurations after setting up Aurora
 - Verify your security group configuration
-- Cluster and database instance have minimally required configuration
-- This configuration is probably the least expensive one too
 
 ## Using AWS Console
 
@@ -71,7 +74,7 @@ In this example:
 - Find security groups under "Security > VPC"
 - Click on the security group
 - Check "Inbound rules"
-- Create or make sure a rule exists to allow inbound traffic to port 5432 (!!!)
+- *Create or make sure a rule exists to allow inbound traffic to port 5432* (!!!)
   - Type: PostgreSQL
   - Protocol: TCP
   - Port range: 5432
@@ -84,11 +87,11 @@ In this example:
 
 - In "Aurora and RDS > Parameter groups"
 - Click "Create parameter group"
-  - Parameter group name: database-2-cluster-aurora-postgres16
+  - Parameter group name: **database-2-cluster-aurora-postgres16**
   - Description: Custom cluster parameter group for database 2
   - Engine type: Aurora PostgreSQL
-  - Parameter group family: aurora-postgresql16
-  - Type: DB Cluster Parameter Group
+  - Parameter group family: **aurora-postgresql16**
+  - Type: *DB Cluster Parameter Group*
 - Click on database-2-cluster-aurora-postgres16
   - Click Edit
   - Type `rds.logical_replication` in the search field
@@ -103,7 +106,7 @@ In this example:
   - Description: Custom database parameter group for database 2
   - Engine type: Aurora PostgreSQL
   - Parameter group family: **aurora-postgresql16**
-  - Type: DB Parameter Group
+  - Type: *DB Parameter Group*
 - Click on database-2-aurora-postgres16
   - Click Edit
   - Type `shared_preload_libraries` in the search field
@@ -114,7 +117,7 @@ In this example:
 
 - Change parameter group for the database cluster
   - Go to "Aurora and RDS > Databases"
-  - Select database-2
+  - Select **database-2**
   - Click Modify
   - Find "Additional configuration" at the bottom of the page
   - Change "DB cluster parameter group" to **database-2-cluster-aurora-postgres16**
@@ -122,7 +125,7 @@ In this example:
   - Click "Modify cluster"
 - Change parameter group for the database instance
   - Go back to "Aurora and RDS > Databases"
-  - Select database-2-instance-1
+  - Select **database-2-instance-1**
   - Click Modify
   - Find "Additional configuration" at the bottom of the page
   - Change "DB parameter group" to **database-2-aurora-postgres16**
@@ -133,7 +136,7 @@ In this example:
 
 - Go back to "Aurora and RDS > Databases"
 - Wait until the status of the cluster and database instance changes from "Modifying" to "Available"
-- Select database-2-instance-1, click Actions and reboot the database
+- Select **database-2-instance-1**, click Actions and reboot the database
 
 ## Using AWS CLI
 
