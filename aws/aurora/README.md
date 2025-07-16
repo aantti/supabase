@@ -46,7 +46,7 @@ docker compose pull
 
 ### Create Aurora DB cluster and DB instance
 
-[..]
+See detailed notes in [AURORA.md](AURORA.md)
 
 ### Initialize the database
 
