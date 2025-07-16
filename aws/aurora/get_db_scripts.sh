@@ -30,5 +30,4 @@ cp -p ./20211115999999_update-auth-permissions_aurora.sql \
 
 # 5. Apply diffs
 (cd initdb/init-scripts && patch -p1 < ../../init-scripts.diff)
-
 (cd initdb/migrations && patch -p1 < ../../migrations.diff)

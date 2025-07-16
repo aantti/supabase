@@ -50,7 +50,7 @@ docker compose pull
 
 ### Initialize the database
 
-Make sure `POSTGRES_HOST` and `POSTGRES_PASSWORD` are configured in the `.env` file, then:
+Make sure `POSTGRES_HOST` and `POSTGRES_PASSWORD` for Aurora are configured in the `.env` file, then:
 
 ```
 (pushd aws/aurora && sh get_db_scripts.sh && sh migrate_aurora.sh)
