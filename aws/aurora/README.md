@@ -1,3 +1,7 @@
+## Create Aurora DB cluster and DB instance
+
+See detailed notes in [AURORA.md](AURORA.md)
+
 ## Set Up Supabase Containers
 
 ### Get the code
@@ -42,11 +46,7 @@ cd supabase-aurora
 docker compose pull
 ```
 
-## Prepare Aurora
-
-### Create Aurora DB cluster and DB instance
-
-See detailed notes in [AURORA.md](AURORA.md)
+## Prepare Aurora PostgreSQL to be used with Supabase
 
 ### Initialize the database
 
