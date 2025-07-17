@@ -1,6 +1,6 @@
 # Aurora PostgreSQL Configuration for Supabase
 
-This guide provides detailed instructions for creating and configuring an AWS Aurora PostgreSQL cluster specifically for use with Supabase. Aurora PostgreSQL requires specific configuration settings to work properly with Supabase's realtime features and extensions.
+Below are detailed instructions for creating and configuring an AWS Aurora PostgreSQL cluster specifically for use with Supabase.
 
 ## Overview
 
@@ -9,17 +9,6 @@ Supabase requires PostgreSQL to be configured with:
 - **Custom extensions** like `pg_cron` and `pg_stat_statements` preloaded
 - **Proper authentication** with the correct master username
 - **Network accessibility** for Supabase services to connect
-
-This guide walks through both AWS Console and AWS CLI methods to create a properly configured Aurora PostgreSQL instance that meets all of Supabase's requirements.
-
-## Configuration Requirements
-
-The Aurora PostgreSQL setup includes:
-- Custom cluster parameter group with `rds.logical_replication = 1`
-- Custom database parameter group with required `shared_preload_libraries`
-- Serverless v2 scaling configuration for cost optimization
-- Public accessibility and proper security group configuration
-- Performance Insights enabled for monitoring
 
 ## Setup Methods
 

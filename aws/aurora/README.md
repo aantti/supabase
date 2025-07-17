@@ -1,26 +1,14 @@
 # Self-Hosting Supabase with AWS Aurora PostgreSQL
 
-This guide helps you set up a self-hosted Supabase instance using AWS Aurora PostgreSQL as the database backend instead of the default PostgreSQL container.
-
-## Why Aurora PostgreSQL?
-
-AWS Aurora PostgreSQL offers several advantages over a standard PostgreSQL deployment:
-
-- **Serverless scaling**: Aurora Serverless v2 automatically scales compute capacity based on demand
-- **High availability**: Built-in replication and failover capabilities
-- **Performance**: Optimized for cloud environments with faster I/O and query performance
-- **Cost-effective**: Pay only for the compute capacity you use with serverless scaling
-- **Managed service**: AWS handles maintenance, backups, and security updates
-- **Production-ready**: Suitable for production workloads with enterprise-grade features
+This repository provides an option for a self-hosted Supabase instance using AWS Aurora PostgreSQL as the database backend instead of the default PostgreSQL container.
 
 ## What This Setup Includes
 
 This configuration provides:
 - Aurora PostgreSQL cluster with logical replication enabled (required for Supabase)
 - Custom parameter groups configured for Supabase extensions (`pg_cron`, `pg_stat_statements`)
-- Serverless v2 scaling configuration for cost optimization
-- Automated setup scripts for easy deployment
-- Integration with Supabase's Docker Compose stack
+- Setup scripts for easy deployment
+- Compatibility with Supabase's Docker Compose configuration
 
 ## Prerequisites
 
