@@ -117,8 +117,8 @@ start_aurora_postgres() {
 stop_aurora_postgres() {
     echo "===> Stopping Aurora PostgreSQL cluster..."
 
+    # TODO: Wait for cluster to be stopped?
     aws rds stop-db-cluster --db-cluster-identifier $CLUSTER_NAME || { echo "stop-db-cluster failed."; exit 1; }
-    aws rds wait db-cluster-stopped --db-cluster-identifier $CLUSTER_NAME
 
     echo "Aurora PostgreSQL cluster stopped successfully."
 }
@@ -234,6 +234,9 @@ main() {
         create)
             create_aurora_postgres
             verify_setup
+            ;;
+        start)
+            start_aurora_postgres
             ;;
         stop)
             stop_aurora_postgres
