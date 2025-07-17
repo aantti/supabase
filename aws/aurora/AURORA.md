@@ -40,6 +40,7 @@ Detailed notes on how to create an Aurora PostgreSQL database are below.
 
 - Check your VPN and subnets configurations after setting up Aurora
 - Verify your security group configuration
+- Check [Security best practices for Amazon Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_BestPractices.Security.html)
 
 ## Using AWS Console
 
