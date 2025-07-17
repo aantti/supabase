@@ -13,6 +13,8 @@ Below is the minimal list of tasks required to set up Aurora PostgreSQL for Supa
 
 See detailed notes in [AURORA.md](AURORA.md)
 
+Use [aws_aurora.sh](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/aws_aurora.sh) to create Aurora PostgreSQL with `aws` CLI. See more [here](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/AURORA.md#using-aws-cli).
+
 ## Set Up Supabase Containers
 
 ### Get the code
