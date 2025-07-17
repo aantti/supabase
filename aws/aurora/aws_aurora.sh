@@ -194,9 +194,9 @@ verify_setup() {
 
     echo "===> Update your .env file with the connection details:"
 
-    echo "POSTGRES_HOST=$CLUSTER_ENDPOINT"
-    echo "POSTGRES_PASSWORD=$MASTER_PASSWORD"
-    echo "POSTGRES_DB=$DB_NAME"
+    echo "POSTGRES_HOST=${INSTANCE_ENDPOINT}"
+    echo "POSTGRES_PASSWORD=${MASTER_PASSWORD}"
+    echo "POSTGRES_DB=${DB_NAME}"
     echo "POSTGRES_PORT=5432"
     echo ""
 }
