@@ -50,4 +50,4 @@ psql:init-scripts/99-jwt.sql:5: ERROR:  permission denied to set parameter "app.
 
 ## Workarounds
 
-Changes to init and migration scripts partially address the above (see [init-scripts.diff](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/init-scripts.diff) and [migrations.diff](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/migrations.diff)).
+Changes to init and migration scripts partially address the above (see [migrate-aurora.sh](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/migrate_aurora.sh#L64), [init-scripts.diff](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/init-scripts.diff) and [migrations.diff](https://github.com/aantti/supabase/blob/self-hosting/aws-aurora/aws/aurora/migrations.diff)).
