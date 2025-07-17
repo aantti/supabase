@@ -121,7 +121,7 @@ Detailed notes on how to create an Aurora PostgreSQL database are below.
 
 **Create custom database parameter group**
 
-- In Aurora and RDS > Parameter groups
+- In "Aurora and RDS > Parameter" groups
 - Click "Create parameter group"
   - Parameter group name: **database-2-aurora-postgresql16**
   - Description: Custom database parameter group for database 2
