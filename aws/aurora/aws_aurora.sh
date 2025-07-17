@@ -89,7 +89,7 @@ wait_cluster_to_be_ready() {
 }
 
 create_aurora_postgres() {
-    echo "===> Creating Aurora PostgreSQL cluster..."
+    echo "===> Creating Aurora PostgreSQL..."
 
     create_custom_parameter_groups || { echo "Failed to create custom parameter groups"; exit 1; }
     create_db_cluster_and_instance || { echo "Failed to create database cluster and instance"; exit 1; }
@@ -204,6 +204,7 @@ verify_setup() {
 usage() {
     echo ""
     echo "Usage: $(basename $0) <create|start|stop|delete>"
+    echo ""
     exit 1
 }
 
