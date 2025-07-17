@@ -6,25 +6,28 @@
 #   - Parameter groups enable logical replication and required shared libraries for Supabase
 #   - Serverless v2 scaling is configured with minimum 0.5 ACU and maximum 8 ACU
 #   - Performance Insights is enabled with 7-day retention
-#   - Security group to allow access from anywhere (0.0.0.0/0) is NOT configured here
+#   - Not configured here: Security group to allow access from anywhere (0.0.0.0/0)
+
+set -e
 
 CLUSTER_NAME="database-2"
 DB_INSTANCE_NAME="${CLUSTER_NAME}-instance-1"
 MASTER_USERNAME="supabase_admin"
-MASTER_PASSWORD="${POSTGRES_PASSWORD:-your-secure-password}"
+MASTER_PASSWORD="${POSTGRES_PASSWORD}"
 DB_NAME="postgres"
 ENGINE_VERSION="16.6"
 DB_CLUSTER_PARAMETER_GROUP="${CLUSTER_NAME}-cluster-aurora-postgres16"
 DB_PARAMETER_GROUP="${CLUSTER_NAME}-aurora-postgresql16"
 DB_PARAMETER_GROUP_FAMILY="aurora-postgresql16"
-VPC_ID="vpc-xxxxxxxx"
-SUBNET_GROUP_NAME="default-vpc-xxxxxxxx"
-SECURITY_GROUP_ID="sg-xxxxxxxx"
+VPC_ID="${AWS_VPC_ID:-vpc-xxxxxxxx}"
+SUBNET_GROUP_NAME="${AWS_SUBNET_GROUP_NAME:-default-vpc-xxxxxxxx}"
+SECURITY_GROUP_ID="${AWS_SECURITY_GROUP_ID:-sg-xxxxxxxx}"
 
-create_aurora_postgres() {
-    echo "Creating Aurora PostgreSQL cluster..."
+export AWS_PAGER=""
 
-    # Create custom cluster parameter group
+create_custom_parameter_groups() {
+    echo "===> Creating Aurora PostgreSQL parameter groups..."
+
     aws rds create-db-cluster-parameter-group \
         --db-cluster-parameter-group-name $DB_CLUSTER_PARAMETER_GROUP \
         --db-parameter-group-family $DB_PARAMETER_GROUP_FAMILY \
@@ -45,8 +48,11 @@ create_aurora_postgres() {
     aws rds modify-db-parameter-group \
         --db-parameter-group-name $DB_PARAMETER_GROUP \
         --parameters "ParameterName=shared_preload_libraries,ParameterValue=pg_cron\\,pg_stat_statements,ApplyMethod=pending-reboot"
+}
 
-    # Create Aurora PostgreSQL cluster
+create_db_cluster_and_instance() {
+    echo "===> Creating Aurora PostgreSQL cluster and instance..."
+
     aws rds create-db-cluster \
         --db-cluster-identifier $CLUSTER_NAME \
         --engine aurora-postgresql \
@@ -58,9 +64,9 @@ create_aurora_postgres() {
         --vpc-security-group-ids $SECURITY_GROUP_ID \
         --db-subnet-group-name $SUBNET_GROUP_NAME \
         --storage-type aurora \
-        --publicly-accessible \
         --enable-performance-insights \
-        --performance-insights-retention-period 7
+        --performance-insights-retention-period 7 \
+        --serverless-v2-scaling-configuration MinCapacity=0.5,MaxCapacity=8
 
     # Create Aurora database instance with Serverless v2
     aws rds create-db-instance \
@@ -72,26 +78,92 @@ create_aurora_postgres() {
         --publicly-accessible \
         --enable-performance-insights \
         --performance-insights-retention-period 7
+}
 
-    # Configure Serverless v2 capacity
-    aws rds modify-db-cluster \
-        --db-cluster-identifier $CLUSTER_NAME \
-        --serverless-v2-scaling-configuration MinCapacity=0.5,MaxCapacity=8
+wait_cluster_to_be_ready() {
+    echo "===> Waiting for resources to be ready..."
+    {
+        aws rds wait db-cluster-available --db-cluster-identifier $CLUSTER_NAME
+        aws rds wait db-instance-available --db-instance-identifier $DB_INSTANCE_NAME
+    } || { echo "Resources failed to become available"; exit 1; }
+}
 
-    # Wait for cluster to be available
-    aws rds wait db-cluster-available --db-cluster-identifier $CLUSTER_NAME
+create_aurora_postgres() {
+    echo "===> Creating Aurora PostgreSQL cluster..."
 
-    # Wait for instance to be available
-    aws rds wait db-instance-available --db-instance-identifier $DB_INSTANCE_NAME
+    create_custom_parameter_groups || { echo "Failed to create custom parameter groups"; exit 1; }
+    create_db_cluster_and_instance || { echo "Failed to create database cluster and instance"; exit 1; }
+
+    wait_cluster_to_be_ready
 
     # Reboot the database instance to apply parameter changes
+    echo "===> Rebooting database instance to apply parameter changes..."
+
     aws rds reboot-db-instance \
         --db-instance-identifier $DB_INSTANCE_NAME
 
-    # Wait for reboot to complete
-    aws rds wait db-instance-available --db-instance-identifier $DB_INSTANCE_NAME
+    wait_cluster_to_be_ready
+}
 
-    # Verify setup and get connection details
+start_aurora_postgres() {
+    echo "===> Starting Aurora PostgreSQL cluster..."
+
+    aws rds start-db-cluster --db-cluster-identifier $CLUSTER_NAME || { echo "start-db-cluster failed."; exit 1; }
+    wait_cluster_to_be_ready
+
+    echo "Aurora PostgreSQL cluster started successfully."
+}
+
+stop_aurora_postgres() {
+    echo "===> Stopping Aurora PostgreSQL cluster..."
+
+    aws rds stop-db-cluster --db-cluster-identifier $CLUSTER_NAME || { echo "stop-db-cluster failed."; exit 1; }
+    aws rds wait db-cluster-stopped --db-cluster-identifier $CLUSTER_NAME
+
+    echo "Aurora PostgreSQL cluster stopped successfully."
+}
+
+delete_aurora_postgres() {
+    echo "===> Deleting Aurora PostgreSQL cluster..."
+
+    # Delete instance first
+    echo "===> Deleting instance..."
+    aws rds delete-db-instance \
+        --db-instance-identifier $DB_INSTANCE_NAME \
+        --skip-final-snapshot || { echo "delete-db-instance failed."; exit 1; }
+
+    # Wait for instance deletion
+    echo "===> Waiting for database instance deletion..."
+    aws rds wait db-instance-deleted --db-instance-identifier $DB_INSTANCE_NAME
+
+    # Delete cluster
+    echo "===> Deleting cluster..."
+    aws rds delete-db-cluster \
+        --db-cluster-identifier $CLUSTER_NAME \
+        --skip-final-snapshot || { echo "delete-db-cluster failed."; exit 1; }
+
+    # Wait for cluster deletion
+    echo "===> Waiting for database cluster deletion..."
+    aws rds wait db-cluster-deleted --db-cluster-identifier $CLUSTER_NAME
+
+    aws rds delete-db-parameter-group \
+        --db-parameter-group-name $DB_PARAMETER_GROUP || {
+            echo "Failed to delete database parameter group."; exit 1;
+        }
+
+    # Delete parameter groups
+    echo "===> Deleting parameter groups..."
+    aws rds delete-db-cluster-parameter-group \
+        --db-cluster-parameter-group-name $DB_CLUSTER_PARAMETER_GROUP || {
+            echo "Failed to delete cluster parameter group.";
+            exit 1;
+        }
+
+    echo "Aurora PostgreSQL cluster and parameter groups deleted successfully."
+}
+
+verify_setup() {
+    echo "===> Verifying setup and getting connection details..."
 
     # Get cluster endpoint
     CLUSTER_ENDPOINT=$(aws rds describe-db-clusters \
@@ -105,96 +177,42 @@ create_aurora_postgres() {
         --query 'DBInstances[0].Endpoint.Address' \
         --output text)
 
+    echo "===> Connection details:"
     echo "Cluster Endpoint: $CLUSTER_ENDPOINT"
     echo "Instance Endpoint: $INSTANCE_ENDPOINT"
     echo "Port: 5432"
     echo "Database: $DB_NAME"
     echo "Username: $MASTER_USERNAME"
+    echo ""
 
-    # Test connectivity (requires psql client)
-    psql -h $CLUSTER_ENDPOINT -U $MASTER_USERNAME -d $DB_NAME -c "SELECT version();"
+    export PGPASSWORD=${MASTER_PASSWORD}
+    echo "===> Testing connection to the database..."
+    if ! psql --no-password -h $INSTANCE_ENDPOINT -U $MASTER_USERNAME -d $DB_NAME -c "SELECT version();"; then
+        echo "===> Failed to connect to the database."
+        exit 1
+    fi
 
-    echo "Update your .env file with the connection details:"
+    echo "===> Update your .env file with the connection details:"
 
     echo "POSTGRES_HOST=$CLUSTER_ENDPOINT"
     echo "POSTGRES_PASSWORD=$MASTER_PASSWORD"
     echo "POSTGRES_DB=$DB_NAME"
     echo "POSTGRES_PORT=5432"
-}
-
-stop_aurora_postgres() {
-    echo "Stopping Aurora PostgreSQL cluster..."
-}
-
-delete_aurora_postgres() {
-    echo "Deleting Aurora PostgreSQL cluster..."
-
-    # Delete instance first
-    echo "Deleting instance..."
-    aws rds delete-db-instance \
-        --no-cli-pager \
-        --db-instance-identifier $DB_INSTANCE_NAME \
-        --skip-final-snapshot
-
-    if [ $? -ne 0 ]; then
-        echo "delete-db-instance failed."
-        exit 1
-    fi
-
-    # Wait for instance deletion
-    echo "Waiting for database instance deletion..."
-    aws rds wait db-instance-deleted --db-instance-identifier $DB_INSTANCE_NAME
-
-    # Delete cluster
-    echo "Deleting cluster..."
-    aws rds delete-db-cluster \
-        --no-cli-pager \
-        --db-cluster-identifier $CLUSTER_NAME \
-        --skip-final-snapshot
-
-    if [ $? -ne 0 ]; then
-        echo "delete-db-cluster failed."
-        exit 1
-    fi
-
-    # Wait for cluster deletion
-    echo "Waiting for database cluster deletion..."
-    aws rds wait db-cluster-deleted --db-cluster-identifier $CLUSTER_NAME
-
-    # Delete parameter groups
-    echo "Deleting parameter groups..."
-    aws rds delete-db-cluster-parameter-group \
-        --no-cli-pager \
-        --db-cluster-parameter-group-name $DB_CLUSTER_PARAMETER_GROUP
-
-    if [ $? -ne 0 ]; then
-        echo "Failed to delete cluster parameter group."
-        exit 1
-    fi
-
-    aws rds delete-db-parameter-group \
-        --no-cli-pager \
-        --db-parameter-group-name $DB_PARAMETER_GROUP
-
-    if [ $? -ne 0 ]; then
-        echo "Failed to delete database parameter group."
-        exit 1
-    fi
-
-    echo "Aurora PostgreSQL cluster and parameter groups deleted successfully."
+    echo ""
 }
 
 usage() {
-    echo "Usage: $(basename $0) <create|stop|delete>"
+    echo ""
+    echo "Usage: $(basename $0) <create|start|stop|delete>"
     exit 1
 }
 
 check_aws_cli() {
     # Сheck if aws cli is installed
     if aws sts get-caller-identity --query Account --output text >/dev/null 2>&1; then
-        echo "Found AWS CLI."
+        echo "===> Found AWS CLI."
     else
-        echo "AWS CLI is not installed or has invalid credentials."
+        echo "===> AWS CLI is not installed or has invalid credentials."
         exit 1
     fi
 }
@@ -204,11 +222,17 @@ main() {
         usage
     fi
 
+    if [ -z "$MASTER_PASSWORD" ]; then
+        echo "===> POSTGRES_PASSWORD is not set. Please set the POSTGRES_PASSWORD environment variable."
+        exit 1
+    fi
+
     check_aws_cli
 
     case $1 in
         create)
             create_aurora_postgres
+            verify_setup
             ;;
         stop)
             stop_aurora_postgres
