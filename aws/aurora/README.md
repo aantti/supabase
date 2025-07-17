@@ -86,7 +86,7 @@ docker compose pull
 Make sure `POSTGRES_HOST` and `POSTGRES_PASSWORD` for Aurora are configured in the `.env` file, then:
 
 ```
-(pushd aws/aurora && sh get_db_scripts.sh && sh migrate_aurora.sh)
+(cd aws/aurora && sh get_db_scripts.sh && sh migrate_aurora.sh)
 ```
 
 ### Update docker-compose.yml to use remote database
