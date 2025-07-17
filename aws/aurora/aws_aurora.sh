@@ -80,7 +80,7 @@ create_db_cluster_and_instance() {
         --performance-insights-retention-period 7
 }
 
-wait_cluster_to_be_ready() {
+wait_for_cluster_ready() {
     echo "===> Waiting for resources to be ready..."
     {
         aws rds wait db-cluster-available --db-cluster-identifier $CLUSTER_NAME
@@ -94,7 +94,7 @@ create_aurora_postgres() {
     create_custom_parameter_groups || { echo "Failed to create custom parameter groups"; exit 1; }
     create_db_cluster_and_instance || { echo "Failed to create database cluster and instance"; exit 1; }
 
-    wait_cluster_to_be_ready
+    wait_for_cluster_ready
 
     # Reboot the database instance to apply parameter changes
     echo "===> Rebooting database instance to apply parameter changes..."
@@ -102,14 +102,14 @@ create_aurora_postgres() {
     aws rds reboot-db-instance \
         --db-instance-identifier $DB_INSTANCE_NAME
 
-    wait_cluster_to_be_ready
+    wait_for_cluster_ready
 }
 
 start_aurora_postgres() {
     echo "===> Starting Aurora PostgreSQL cluster..."
 
     aws rds start-db-cluster --db-cluster-identifier $CLUSTER_NAME || { echo "start-db-cluster failed."; exit 1; }
-    wait_cluster_to_be_ready
+    wait_for_cluster_ready
 
     echo "Aurora PostgreSQL cluster started successfully."
 }
