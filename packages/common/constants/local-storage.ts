@@ -6,6 +6,7 @@ export const LOCAL_STORAGE_KEYS = {
     `supabase-ai-assistant-state-${projectRef}`,
   SIDEBAR_BEHAVIOR: 'supabase-sidebar-behavior',
   EDITOR_PANEL_STATE: 'supabase-editor-panel-state',
+  PROJECTS_VIEW: 'projects-view',
 
   UI_PREVIEW_API_SIDE_PANEL: 'supabase-ui-api-side-panel',
   UI_PREVIEW_CLS: 'supabase-ui-cls',
@@ -18,7 +19,6 @@ export const LOCAL_STORAGE_KEYS = {
 
   NEW_LAYOUT_NOTICE_ACKNOWLEDGED: 'new-layout-notice-acknowledge',
   TABS_INTERFACE_ACKNOWLEDGED: 'tabs-interface-acknowledge',
-  TERMS_OF_SERVICE_ACKNOWLEDGED: 'terms-of-service-acknowledged',
   AI_ASSISTANT_MCP_OPT_IN: 'ai-assistant-mcp-opt-in',
 
   DASHBOARD_HISTORY: (ref: string) => `dashboard-history-${ref}`,
@@ -63,8 +63,6 @@ export const LOCAL_STORAGE_KEYS = {
   // api keys view switcher for new and legacy api keys
   API_KEYS_VIEW: (ref: string) => `supabase-api-keys-view-${ref}`,
 
-  // last visited logs page
-  LAST_VISITED_LOGS_PAGE: 'supabase-last-visited-logs-page',
   LAST_VISITED_ORGANIZATION: 'last-visited-organization',
 
   // user impersonation selector previous searches

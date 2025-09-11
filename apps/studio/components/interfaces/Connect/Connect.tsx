@@ -1,16 +1,17 @@
 import { PermissionAction } from '@supabase/shared-types/out/constants'
 import { useParams } from 'common'
 import { ExternalLink, Plug } from 'lucide-react'
-import { parseAsBoolean, useQueryState } from 'nuqs'
+import { parseAsBoolean, parseAsString, useQueryState } from 'nuqs'
 import { useMemo, useState } from 'react'
 
 import { DatabaseConnectionString } from 'components/interfaces/Connect/DatabaseConnectionString'
 import { ButtonTooltip } from 'components/ui/ButtonTooltip'
 import Panel from 'components/ui/Panel'
-import { useAPIKeysQuery } from 'data/api-keys/api-keys-query'
-import { getAPIKeys, useProjectSettingsV2Query } from 'data/config/project-settings-v2-query'
-import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
-import { useSelectedProject } from 'hooks/misc/useSelectedProject'
+import { getKeys, useAPIKeysQuery } from 'data/api-keys/api-keys-query'
+import { useProjectSettingsV2Query } from 'data/config/project-settings-v2-query'
+import { useCustomContent } from 'hooks/custom-content/useCustomContent'
+import { useAsyncCheckProjectPermissions } from 'hooks/misc/useCheckPermissions'
+import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
 import { PROJECT_STATUS } from 'lib/constants'
 import {
   Button,
@@ -30,20 +31,33 @@ import {
 } from 'ui'
 import { CONNECTION_TYPES, ConnectionType, FRAMEWORKS, MOBILES, ORMS } from './Connect.constants'
 import { getContentFilePath } from './Connect.utils'
-import ConnectDropdown from './ConnectDropdown'
-import ConnectTabContent from './ConnectTabContent'
+import { ConnectDropdown } from './ConnectDropdown'
+import { ConnectTabContent } from './ConnectTabContent'
+import { ConnectTabContentCustom } from './ConnectTabContentCustom'
 
 export const Connect = () => {
   const { ref: projectRef } = useParams()
-  const selectedProject = useSelectedProject()
+  const { data: selectedProject } = useSelectedProjectQuery()
   const isActiveHealthy = selectedProject?.status === PROJECT_STATUS.ACTIVE_HEALTHY
+
+  const { connectFrameworks } = useCustomContent(['connect:frameworks'])
+  const connectionTypes = !connectFrameworks
+    ? CONNECTION_TYPES
+    : [
+        { key: 'direct', label: 'Connection String', obj: [] },
+        connectFrameworks,
+        { key: 'orms', label: 'ORMs', obj: ORMS },
+      ]
+  const frameworks = !connectFrameworks ? FRAMEWORKS : connectFrameworks.obj
 
   const [showConnect, setShowConnect] = useQueryState(
     'showConnect',
     parseAsBoolean.withDefault(false)
   )
 
-  const [connectionObject, setConnectionObject] = useState<ConnectionType[]>(FRAMEWORKS)
+  const [tab, setTab] = useQueryState('tab', parseAsString.withDefault('direct'))
+
+  const [connectionObject, setConnectionObject] = useState<ConnectionType[]>(frameworks)
   const [selectedParent, setSelectedParent] = useState(connectionObject[0].key) // aka nextjs
   const [selectedChild, setSelectedChild] = useState(
     connectionObject.find((item) => item.key === selectedParent)?.children[0]?.key ?? ''
@@ -54,8 +68,13 @@ export const Connect = () => {
       ?.children.find((child) => child.key === selectedChild)?.children[0]?.key || ''
   )
 
+  const isFrameworkSelected = frameworks.some((x) => x.key === selectedParent)
+
   const { data: settings } = useProjectSettingsV2Query({ projectRef }, { enabled: showConnect })
-  const canReadAPIKeys = useCheckPermissions(PermissionAction.READ, 'service_api_keys')
+  const { can: canReadAPIKeys } = useAsyncCheckProjectPermissions(
+    PermissionAction.READ,
+    'service_api_keys'
+  )
 
   const handleParentChange = (value: string) => {
     setSelectedParent(value)
@@ -105,9 +124,11 @@ export const Connect = () => {
   }
 
   function handleConnectionType(type: string) {
+    setTab(type)
+
     if (type === 'frameworks') {
-      setConnectionObject(FRAMEWORKS)
-      handleConnectionTypeChange(FRAMEWORKS)
+      setConnectionObject(frameworks)
+      handleConnectionTypeChange(frameworks)
     }
 
     if (type === 'mobiles') {
@@ -138,21 +159,28 @@ export const Connect = () => {
     return []
   }
 
-  const { anonKey } = canReadAPIKeys ? getAPIKeys(settings) : { anonKey: null }
-  const { data: apiKeys } = useAPIKeysQuery({ projectRef, reveal: false })
+  const { data: apiKeys } = useAPIKeysQuery({ projectRef })
+  const { anonKey, publishableKey } = canReadAPIKeys
+    ? getKeys(apiKeys)
+    : { anonKey: null, publishableKey: null }
 
   const projectKeys = useMemo(() => {
     const protocol = settings?.app_config?.protocol ?? 'https'
     const endpoint = settings?.app_config?.endpoint ?? ''
     const apiHost = canReadAPIKeys ? `${protocol}://${endpoint ?? '-'}` : ''
 
-    const apiUrl = canReadAPIKeys ? apiHost : null
     return {
       apiUrl: apiHost ?? null,
       anonKey: anonKey?.api_key ?? null,
-      publishableKey: apiKeys?.find(({ type }) => type === 'publishable')?.api_key ?? null,
+      publishableKey: publishableKey?.api_key ?? null,
     }
-  }, [apiKeys, anonKey, canReadAPIKeys, settings])
+  }, [
+    settings?.app_config?.protocol,
+    settings?.app_config?.endpoint,
+    canReadAPIKeys,
+    anonKey?.api_key,
+    publishableKey?.api_key,
+  ])
 
   const filePath = getContentFilePath({
     connectionObject,
@@ -160,6 +188,15 @@ export const Connect = () => {
     selectedChild,
     selectedGrandchild,
   })
+
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      setShowConnect(null)
+      setTab(null)
+    } else {
+      setShowConnect(open)
+    }
+  }
 
   if (!isActiveHealthy) {
     return (
@@ -181,7 +218,7 @@ export const Connect = () => {
   }
 
   return (
-    <Dialog open={showConnect} onOpenChange={(open) => setShowConnect(!open ? null : open)}>
+    <Dialog open={showConnect} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>
         <Button type="default" className="rounded-full" icon={<Plug className="rotate-90" />}>
           <span>Connect</span>
@@ -195,16 +232,16 @@ export const Connect = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs_Shadcn_ defaultValue="direct" onValueChange={(value) => handleConnectionType(value)}>
+        <Tabs_Shadcn_ defaultValue={tab} onValueChange={(value) => handleConnectionType(value)}>
           <TabsList_Shadcn_ className={cn('flex overflow-x-scroll gap-x-4', DIALOG_PADDING_X)}>
-            {CONNECTION_TYPES.map((type) => (
+            {connectionTypes.map((type) => (
               <TabsTrigger_Shadcn_ key={type.key} value={type.key} className="px-0">
                 {type.label}
               </TabsTrigger_Shadcn_>
             ))}
           </TabsList_Shadcn_>
 
-          {CONNECTION_TYPES.map((type) => {
+          {connectionTypes.map((type) => {
             const hasChildOptions =
               (connectionObject.find((parent) => parent.key === selectedParent)?.children.length ||
                 0) > 0
@@ -280,11 +317,18 @@ export const Connect = () => {
                 <p className="text-xs text-foreground-lighter my-3">
                   Add the following files below to your application
                 </p>
-                <ConnectTabContent
-                  projectKeys={projectKeys}
-                  filePath={filePath}
-                  className="rounded-b-none"
-                />
+                {!!connectFrameworks && isFrameworkSelected ? (
+                  <ConnectTabContentCustom
+                    projectKeys={projectKeys}
+                    framework={frameworks.find((x) => x.key === selectedParent)}
+                  />
+                ) : (
+                  <ConnectTabContent
+                    projectKeys={projectKeys}
+                    filePath={filePath}
+                    className="rounded-b-none"
+                  />
+                )}
                 <Panel.Notice
                   className="border border-t-0 rounded-lg rounded-t-none"
                   title="New API keys coming 2025"

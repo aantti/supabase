@@ -2,7 +2,6 @@ import { PermissionAction } from '@supabase/shared-types/out/constants'
 import { Download } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Button } from 'ui'
 
 import {
   ScaffoldSection,
@@ -11,16 +10,19 @@ import {
 } from 'components/layouts/Scaffold'
 import NoPermission from 'components/ui/NoPermission'
 import { getDocument } from 'data/documents/document-query'
-import { useCheckPermissions } from 'hooks/misc/useCheckPermissions'
-import { useSelectedOrganization } from 'hooks/misc/useSelectedOrganization'
+import { useSendEventMutation } from 'data/telemetry/send-event-mutation'
+import { useAsyncCheckProjectPermissions } from 'hooks/misc/useCheckPermissions'
+import { useSelectedOrganizationQuery } from 'hooks/misc/useSelectedOrganization'
+import { Button } from 'ui'
+import ShimmeringLoader from 'ui-patterns/ShimmeringLoader'
 
-const SecurityQuestionnaire = () => {
-  const organization = useSelectedOrganization()
+export const SecurityQuestionnaire = () => {
+  const { data: organization } = useSelectedOrganizationQuery()
   const slug = organization?.slug
-  const canReadSubscriptions = useCheckPermissions(
-    PermissionAction.BILLING_READ,
-    'stripe.subscriptions'
-  )
+
+  const { mutate: sendEvent } = useSendEventMutation()
+  const { can: canReadSubscriptions, isLoading: isLoadingPermissions } =
+    useAsyncCheckProjectPermissions(PermissionAction.BILLING_READ, 'stripe.subscriptions')
 
   const currentPlan = organization?.plan
 
@@ -49,7 +51,11 @@ const SecurityQuestionnaire = () => {
           </div>
         </ScaffoldSectionDetail>
         <ScaffoldSectionContent>
-          {!canReadSubscriptions ? (
+          {isLoadingPermissions ? (
+            <div className="flex items-center justify-center h-full">
+              <ShimmeringLoader className="w-24" />
+            </div>
+          ) : !canReadSubscriptions ? (
             <NoPermission resourceText="access our security questionnaire" />
           ) : (
             <>
@@ -65,6 +71,11 @@ const SecurityQuestionnaire = () => {
                     type="default"
                     icon={<Download />}
                     onClick={() => {
+                      sendEvent({
+                        action: 'document_view_button_clicked',
+                        properties: { documentName: 'Standard Security Questionnaire' },
+                        groups: { organization: organization?.slug ?? 'Unknown' },
+                      })
                       if (slug) fetchQuestionnaire(slug)
                     }}
                   >
@@ -79,5 +90,3 @@ const SecurityQuestionnaire = () => {
     </>
   )
 }
-
-export default SecurityQuestionnaire

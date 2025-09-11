@@ -10,8 +10,8 @@ import {
   useState,
 } from 'react'
 
-import { FeatureFlagContext, LOCAL_STORAGE_KEYS } from 'common'
-import { useFlag, useIsRealtimeSettingsFFEnabled } from 'hooks/ui/useFlag'
+import { FeatureFlagContext, LOCAL_STORAGE_KEYS, useFlag } from 'common'
+import { useIsRealtimeSettingsFFEnabled } from 'hooks/ui/useFlag'
 import { EMPTY_OBJ } from 'lib/void'
 import { FEATURE_PREVIEWS } from './FeaturePreview.constants'
 
@@ -92,9 +92,12 @@ export const useIsInlineEditorEnabled = () => {
 
 export const useUnifiedLogsPreview = () => {
   const { flags, onUpdateFlag } = useFeaturePreviewContext()
+
   const isEnabled = flags[LOCAL_STORAGE_KEYS.UI_PREVIEW_UNIFIED_LOGS]
+
   const enable = () => onUpdateFlag(LOCAL_STORAGE_KEYS.UI_PREVIEW_UNIFIED_LOGS, true)
   const disable = () => onUpdateFlag(LOCAL_STORAGE_KEYS.UI_PREVIEW_UNIFIED_LOGS, false)
+
   return { isEnabled, enable, disable }
 }
 

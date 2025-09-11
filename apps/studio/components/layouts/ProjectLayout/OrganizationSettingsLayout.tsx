@@ -12,20 +12,6 @@ function OrganizationSettingsLayout({ children }: PropsWithChildren) {
   const fullCurrentPath = useCurrentPath()
   const [currentPath] = fullCurrentPath.split('#')
 
-  // Hide these settings in the new layout on the following paths
-  const isHidden = (path: string) => {
-    return (
-      path === `/org/${slug}/team` ||
-      path === `/org/${slug}/integrations` ||
-      path === `/org/${slug}/usage` ||
-      path === `/org/${slug}/billing`
-    )
-  }
-
-  if (isHidden(currentPath)) {
-    return children
-  }
-
   const navMenuItems = [
     {
       label: 'General',
@@ -39,6 +25,12 @@ function OrganizationSettingsLayout({ children }: PropsWithChildren) {
       label: 'OAuth Apps',
       href: `/org/${slug}/apps`,
     },
+
+    {
+      label: 'SSO',
+      href: `/org/${slug}/sso`,
+    },
+
     {
       label: 'Audit Logs',
       href: `/org/${slug}/audit`,
